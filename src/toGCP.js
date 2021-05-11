@@ -58,10 +58,10 @@ const toGCP = ({
       singleUtterance,
       config: {
         languageCode,
-        maxSpeakerCount,
         encoding: parseEncoding(contentType),
         sampleRateHertz: sampleRate,
         audioChannelCount: channels,
+        diarizationSpeakerCount: maxSpeakerCount,
         enableSpeakerDiarization: useSpeakerLabels,
         enableAutomaticPunctuation: usePunctuation,
         enableWordConfidence: useWordConfidence,
