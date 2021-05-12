@@ -20,13 +20,13 @@ yarn add @buccaneerai/stt-gcp
 Stream audio speech data to AWS Transcribe via WebSocket and get transcripts back:
 ```js
 import {map} from 'rxjs/operators';
-import {toGCP} from '@buccaneerai/stt-gcp';
+import {toGCPSpeech} from '@buccaneerai/stt-gcp';
 
 // The pipeline can take a stream of audio chunks encoded as 
 // LINEAR16 (PCM encoded as 16-bit integers) in the form of a Buffer
 const buffer$ = pcmChunkEncodedAs16BitIntegers$.pipe(
   map(chunk => Buffer.from(chunk, 'base64')),
-  toGCP({
+  toGCPSpeech({
     sampleRate: 16000, // optional
     contentType: 'audio/l16', // optional
     googleCreds: process.env.GOOGLE_APPLICATION_CREDENTIALS, // required
