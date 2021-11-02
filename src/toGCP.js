@@ -96,7 +96,7 @@ const toGCP = ({
   const stt$ = base64ChunkWithTiming$.pipe(
     // whenever the max time is elapsed, close the prior window & open a new one
     window(startNewWindow$),
-    tap(() => console.log('toGCP.OPENING_NEW_WEBSOCKET')), // FIXME
+    // tap(() => console.log('toGCP.OPENING_NEW_WEBSOCKET')), // FIXME
     // map(() => base64ChunkWithTiming$.pipe(takeUntil(startNewWindow$))),
     map(window$ => window$.pipe(
       _base64WithTimingToSTT({
