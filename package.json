@@ -1,6 +1,6 @@
 {
   "name": "@buccaneerai/stt-gcp",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "👂 RxJS operator for realtime speech-to-text (STT/S2T) using Google speeh-to-text",
   "main": "dist/index.js",
   "repository": "https://github.com/buccaneerai/stt-gcp.git",
