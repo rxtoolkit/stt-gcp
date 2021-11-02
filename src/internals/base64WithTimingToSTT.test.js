@@ -1,10 +1,20 @@
 import {expect} from 'chai';
+import path from 'path';
 import sinon from 'sinon';
 import {marbles} from 'rxjs-marbles/mocha';
-import {mapTo} from 'rxjs/operators';
+import {of,merge,zip} from 'rxjs';
+import {map,mapTo,pairwise,share,tap} from 'rxjs/operators';
+
+import {fromFile} from '@bottlenose/rxfs';
 
 import base64WithTimingToSTT from './base64WithTimingToSTT';
 import mapGCPResponseToCleanOutput from './mapGCPResponseToCleanOutput';
+import trackAudioTimeConsumed from './trackAudioTimeConsumed';
+
+const SAMPLE_FILE_PATH = path.resolve(
+  __dirname,
+  '../../scripts/sample-audio.linear16'
+);
 
 const fakeResponse = [{
     results: [
@@ -146,6 +156,48 @@ describe('base64WithTimingToSTT', () => {
     expect(base64WithTimingToSTT).to.be.a('function');
   });
 
+  it('should properly open streams given a real audio file', done => {
+    const onData = sinon.spy();
+    const fileChunk$ = fromFile({filePath: SAMPLE_FILE_PATH}).pipe(share());
+    const startTime = 30; // start time to offset the audio by
+    const actualAudioTime = 98.97800000000008; // the true length of the audio
+    const startAndEndTiming$ = merge(
+      of(startTime),
+      fileChunk$.pipe(
+        trackAudioTimeConsumed(),
+        map(t => t + startTime)
+      )
+    ).pipe(
+      pairwise(),
+      // tap(console.log)
+    );
+    const toSTT = () => source$ => source$.pipe(mapTo(fakeResponse));
+    const params = {
+        gcpConfig: {},
+        useInterimResults: false,
+        singleUtterance: false,
+        useBetaModel: false,
+        _toSTT: sinon.spy(toSTT),
+        _mapGCPResponse: sinon.spy(mapGCPResponseToCleanOutput),
+    };
+    const source$ = zip(fileChunk$, startAndEndTiming$);
+    const actual$ = source$.pipe(
+      base64WithTimingToSTT(params)
+    );
+    actual$.subscribe(onData, console.trace, () => {
+      expect(params._toSTT.calledOnce).to.be.true;
+      expect(onData.callCount > 0).to.be.true;
+      expect(params._mapGCPResponse.getCall(0).args[0]).to.equal(startTime);
+      expect(params._mapGCPResponse.getCall(1).args[0]).to.equal(startTime);
+      expect(params._mapGCPResponse.getCall(onData.callCount - 1).args[0]).to.equal(startTime);
+      const lastCall = onData.getCall(onData.callCount - 1);
+      expect(lastCall.args[0]).to.deep.equal(
+        mapGCPResponseToCleanOutput(30)(fakeResponse)
+      );
+      done();
+    });
+  }).timeout(3000);
+
   it('should return properly timestamped STT responses, given an input stream', marbles(m => {
     const fakeResponses = source$ => source$.pipe(mapTo(fakeResponse));
     const _toSTT = sinon.stub().returns(fakeResponses);
@@ -162,6 +214,7 @@ describe('base64WithTimingToSTT', () => {
       singleUtterance: false,
       useBetaModel: true,
       _toSTT,
+      _mapGCPResponse: mapGCPResponseToCleanOutput,
     });
     const out$ = source$.pipe(operator);
     const expected$ = m.cold('-0-1-2--3|', [

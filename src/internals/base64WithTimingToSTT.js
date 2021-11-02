@@ -16,6 +16,7 @@ const base64ToTimestampedSTT = ({
   useBetaModel,
   stop$ = of(),
   _toSTT = toSTT,
+  _mapGCPResponse = mapGCPResponseToCleanOutput
 }) => windowedBase64ChunkWithTiming$ => {
   // create a subscription to avoid double-subscribing to the source$
   const sourceSub$ = windowedBase64ChunkWithTiming$.pipe(
@@ -44,9 +45,7 @@ const base64ToTimestampedSTT = ({
   // from GCP
   const sttWithTimestamp$ = stt$.pipe(
     withLatestFrom(startTime$),
-    map(([sttResponse, startTime]) =>
-      mapGCPResponseToCleanOutput(startTime)(sttResponse)
-    )
+    map(([sttResponse, startTime]) => _mapGCPResponse(startTime)(sttResponse))
   );
   return sttWithTimestamp$;
 };
