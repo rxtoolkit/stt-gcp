@@ -1,59 +1,68 @@
 // Example usage:
-// deepgram: DEEPGRAM_USERNAME=me@gmail.com DEEPGRAM_PASSWORD=seeecret yarn demo:run
-// aws: AWS_ACCESS_KEY_ID=*** AWS_SECRET_ACCESS_KEY=*** yarn demo:run
 // gcp: GOOGLE_APPLICATION_CREDENTIAL=path/to/credentials demo:run
-// for deepspeech, the model must be installed locally! then:
-// deepspeech: demo:run
-const {Command} = require('commander');
+const fs = require('fs');
 const path = require('path');
+const {Command} = require('commander');
 const {DateTime} = require('luxon');
+const roundTo = require('round-to');
 
 const {concat, of, throwError} = require('rxjs');
-const {map, scan, share,tap} = require('rxjs/operators');
+const {
+  delay,
+  distinctUntilChanged,
+  map,
+  mergeAll,
+  scan,
+  share,
+  tap,
+  toArray,
+  window,
+} = require('rxjs/operators');
 
 const {fromFile,writeFile} = require('@bottlenose/rxfs');
+
 const {toGCPSpeech} = require('../dist/index.js');
+const measureAudioChunkTime = require('../dist/internals/measureAudioChunkTime.js').default;
+const diff = require('./internals/diff');
+const timeChunks = require('./internals/timeChunks');
 
 const trace = label => tap(data => console.log(label, data));
 
 const transcribe = params => {
-  const audioChunk$ = fromFile({filePath: params.inputFilePath});
-  console.log('auduioChunk', audioChunk$.pipe);
-  const transcription$ = audioChunk$.pipe(
-    tap(console.log),
-    toGCPSpeech(params)
+  const audioChunk$ = fromFile({filePath: params.inputFilePath}).pipe(share());
+  const audioSecond$ = audioChunk$.pipe(
+    map(measureAudioChunkTime()),
+    scan((acc, next) => acc + next, 0),
+    map(num => roundTo.down(num, 0)), // track when the next whole second has been elapsed
+    distinctUntilChanged(),
+  );
+  const input$ = (
+    params.useRealTime
+    ? audioChunk$.pipe(
+      window(audioSecond$),
+      scan((acc, next$) => [next$, acc[1] + 1], [null, -1]),
+      tap(([,i]) => console.log('window ', i)),
+      map(([chunk$, i]) => chunk$.pipe(delay(i * 1000))),
+      mergeAll()
+    )
+    : audioChunk$
+  );
+  const transcription$ = input$.pipe(
+    tap(() => console.log('input$.next')),
+    toGCPSpeech(params),
   );
   return transcription$;
 };
 
 const dateFormat = 'YYYY-MM-DD-hh-mm-ss';
 
-const outputWriter = filePath => message$ => {
-  const rawJsonStr$ = message$.pipe(
-    scan(([index], message) => [index + 1, message], [-1, null]),
-    map(([index, message]) => ({index, ...message})),
-    map(message => JSON.stringify(message)),
-    share()
-  );
-  // add commas to all but the last json object
-  const allButLastJsonStr$ = rawJsonStr$.pipe(
-    // skipLast(1),
-    map(json => `${json},`)
-  );
-  // const lastJsonStr$ = rawJsonStr$.pipe(takeLast(1));
-  // const json$ = merge(allButLastJsonStr$, lastJsonStr$);
-  const json$ = allButLastJsonStr$;
-  const fileContentObservables = [
-    of('['), // starting character
-    json$, // JSON objects
-    of(']'), // ending character
-  ];
-  const outputWriter$ = concat(...fileContentObservables).pipe(
-    trace('outputToWrite'),
-    map(str => Buffer.from(str)),
-    trace('bufferToWrite'),
-    writeFile({filePath}),
-    trace('writeResult')
+const outputWriter = filePath => response$ => {
+  const outputWriter$ = response$.pipe(
+    toArray(),
+    tap(() => console.log('OUTPUT_READY_TO_WRITE')),
+    map(arr => JSON.stringify(arr)),
+    map(json => Buffer.from(json)),
+    map(buffer => fs.writeFileSync(filePath, buffer))
   );
   return outputWriter$;
 };
@@ -65,7 +74,9 @@ function runDemo(...args) {
   const transcription$ = transcribe(params).pipe(share());
   transcription$.subscribe(
     out => console.log(JSON.stringify(out)),
-    console.trace,
+    err => {
+      console.trace(err);
+    },
     () => {
       console.log('DONE');
       if (!params.writeOutput) process.exit();
@@ -88,17 +99,17 @@ program
   .command('run')
   .description('Runs transcription demo. Example: run')
   .option(
-    '--input-file-path <inputFilePath>',
+    '-i, --input-file-path <inputFilePath>',
     'Path to input audio file',
     defaults.inputFilePath
   )
   .option(
-    '--write-output',
-    'write output to a file at the given path',
-    defaults.outputPath
+    '-w, --write-output',
+    'write output to a file',
+    false
   )
   .option(
-    '--output-path <outputPath>',
+    '-o, --output-path <outputPath>',
     'Path of where to write output',
     defaults.outputPath
   )
@@ -107,6 +118,38 @@ program
     'Path to GCP credential JSON file',
     process.env.GOOGLE_APPLICATION_CREDENTIALS
   )
-  .action(options => runDemo({...options}))
+  .option(
+    '-t, --stream-time-limit <streamTimeLimit>',
+    'maximum time before restarting a new stream',
+    num => parseInt(num, 10),
+    260000
+  )
+  .option(
+    '-r, --use-real-time',
+    'space file chunks out over time to simulate real-time streaming',
+    false
+  )
+  .option(
+    '-n, --normalize-words',
+    'parse GCP responses to remove duplicates and cleanup words',
+    false
+  )
+  .action(options => runDemo({...options}));
+
+program
+  .command('timings')
+  .description('measure timings of audio chunks')
+  .option('-i, --input-file-path <inputFilePath>', 'file to analyze', defaults.inputFilePath)
+  .action((opts) => timeChunks({...opts}));
+
+program
+  .command('diff <files...>')
+  .description('give filenames of the two files (of GCP responses) to compare')
+  .option(
+    '--dir <dir>',
+    'folder in which the files are located',
+    path.resolve(__dirname, './output')
+  )
+  .action((files, opts) => diff({files, dir: opts.dir}));
 
 program.parse(process.argv);
