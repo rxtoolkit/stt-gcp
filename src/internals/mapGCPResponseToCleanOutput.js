@@ -1,3 +1,4 @@
+import isArray from 'lodash/isArray';
 import get from 'lodash/get';
 import roundTo from 'round-to';
 
@@ -40,7 +41,7 @@ export const mapResult = startTime => r => ({
 });
 
 const mapGCPResponseToCleanOutput = (startTime = 0) => response => {
-  const events = response.map(event => ({
+  const events = (isArray(response) ? response : [response]).map(event => ({
     results: get(event, 'results', []).map(mapResult(startTime)),
   }));
   return events;
