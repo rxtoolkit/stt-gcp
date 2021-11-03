@@ -44,7 +44,7 @@ const mapGCPResponseToCleanOutput = (startTime = 0) => response => {
   const events = (isArray(response) ? response : [response]).map(event => ({
     results: get(event, 'results', []).map(mapResult(startTime)),
   }));
-  return events;
+  return events[0];
 };
 
 export default mapGCPResponseToCleanOutput;

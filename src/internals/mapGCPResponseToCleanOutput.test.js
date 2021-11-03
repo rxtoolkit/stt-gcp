@@ -333,7 +333,7 @@ describe('mapGCPResponseToCleanOutput', () => {
       confidence: 0.9128385782241821,
       speakerTag: 0,
     };
-    const result = get(response, '[0].results[0].alternatives[0].words[1]');
+    const result = get(response, 'results[0].alternatives[0].words[1]');
     expect(result).to.deep.equal(expected);
   });
 });
