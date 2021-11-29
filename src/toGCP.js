@@ -51,6 +51,7 @@ const toGCP = ({
   sampleRate = 16000,
   channels = null,
   languageCode = 'en-US',
+  model = 'default', // default, medical_dictation, medical_conversation, video, phone_call
   maxSpeakerCount = 5,
   useInterimResults = false,
   useSpeakerLabels = true,
@@ -66,6 +67,7 @@ const toGCP = ({
 } = {}) => fileChunk$ => {
   const gcpConfig = {
     languageCode,
+    model,
     encoding: parseEncoding(contentType),
     sampleRateHertz: sampleRate,
     audioChannelCount: channels,
@@ -74,7 +76,6 @@ const toGCP = ({
     enableAutomaticPunctuation: usePunctuation,
     enableWordConfidence: useWordConfidence,
     enableWordTimeOffsets: useTimeOffsets,
-    // model
     // useEnhanced
   };
   const sourceSub$ = fileChunk$.pipe(share());
