@@ -1,7 +1,7 @@
 # @rxtk/stt-gcp
 > 👂 An RxJS operator for real-time speech-to-text (STT/S2T) streaming using the GCP speech-to-text API.
 
-> 🍎 If you are using an Apple M1 machine, this package only works in node >15.x
+> 🍎 If you are using an Apple Silicon (ARM) machine, this package only works in node >15.x
 
 
 ```bash
@@ -14,7 +14,7 @@ yarn add @rxtk/stt-gcp
 
 ## API
 
-### `toGCPTranscribe`
+### `toGCPSpeech`
 Stream audio speech data to AWS Transcribe via WebSocket and get transcripts back:
 ```js
 import {map} from 'rxjs/operators';
