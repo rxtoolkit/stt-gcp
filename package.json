@@ -1,16 +1,13 @@
 {
-  "name": "@buccaneerai/stt-gcp",
+  "name": "@rxtk/stt-gcp",
   "version": "3.5.0",
   "description": "👂 RxJS operator for realtime speech-to-text (STT/S2T) using Google speeh-to-text",
   "main": "dist/index.js",
-  "repository": "https://github.com/buccaneerai/stt-gcp.git",
+  "repository": "https://github.com/rxtoolkit/stt-gcp.git",
   "author": "Buccaneer LLC <opensource@buccaneer.ai>",
-  "license": "UNLICENSED",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/buccaneerai/stt-gcp/issues"
+    "url": "https://github.com/rxtoolkit/stt-gcp/issues"
   },
   "keywords": [
     "speech-to-text",
@@ -54,12 +51,15 @@
     "@babel/preset-env": "^7.12.13",
     "@babel/register": "^7.12.13",
     "@bottlenose/rxfs": "^0.7.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "chai": "^4.2.0",
     "commander": "^7.0.0",
     "diff": "^5.0.0",
     "luxon": "^1.25.0",
     "mocha": "^8.2.1",
     "rxjs-marbles": "^6.0.1",
+    "semantic-release-export-data": "^1.0.1",
     "sinon": "^9.2.4"
   },
   "engines": {

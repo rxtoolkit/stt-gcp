@@ -1,13 +1,11 @@
-# @buccaneerai/stt-gcp
+# @rxtk/stt-gcp
 > 👂 An RxJS operator for real-time speech-to-text (STT/S2T) streaming using the GCP speech-to-text API.
 
 > 🍎 If you are using an Apple M1 machine, this package only works in node >15.x
 
-## Installation
-This is a private package. It requires setting up access in your npm config.
 
 ```bash
-yarn add @buccaneerai/stt-gcp
+yarn add @rxtk/stt-gcp
 ```
 
 ⚠️  To run the GCP transcription pipeline, you will need to provide a path to JSON containing your `GOOGLE_APPLICATION_CREDENTIALS`. You can set this as an environment variable or pass it in.
@@ -20,7 +18,7 @@ yarn add @buccaneerai/stt-gcp
 Stream audio speech data to AWS Transcribe via WebSocket and get transcripts back:
 ```js
 import {map} from 'rxjs/operators';
-import {toGCPSpeech} from '@buccaneerai/stt-gcp';
+import {toGCPSpeech} from '@rxtk/stt-gcp';
 
 // The pipeline can take a stream of audio chunks encoded as 
 // LINEAR16 (PCM encoded as 16-bit integers) in the form of a Buffer
