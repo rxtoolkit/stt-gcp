@@ -3,6 +3,9 @@
 
 > 🍎 If you are using an Apple Silicon (ARM) machine, this package only works in node >15.x
 
+```bash
+npm i @rxtk/stt-gcp
+```
 
 ```bash
 yarn add @rxtk/stt-gcp
