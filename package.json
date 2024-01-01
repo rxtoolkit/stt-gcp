@@ -1,6 +1,6 @@
 {
   "name": "@rxtk/stt-gcp",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "description": "👂 RxJS operator for realtime speech-to-text (STT/S2T) using Google speeh-to-text",
   "main": "dist/index.js",
   "repository": "https://github.com/rxtoolkit/stt-gcp.git",
